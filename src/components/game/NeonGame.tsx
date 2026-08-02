@@ -127,8 +127,8 @@ function ToastStack() {
 // TILE COMPONENT
 // ═══════════════════════════════════════════════════════════════
 
-function Tile({ value, row, col, gap, tileSize, isNew, isMerged, isBigMerge, language }: {
-  value: number; row: number; col: number; gap: number; tileSize: number;
+function Tile({ value, row, col, gap, cellSize, tileSize, isNew, isMerged, isBigMerge, language }: {
+  value: number; row: number; col: number; gap: number; cellSize: number; tileSize: number;
   isNew: boolean; isMerged: boolean; isBigMerge: boolean; language: 'en' | 'fa';
 }) {
   const color = getTileColor(value);
@@ -149,8 +149,8 @@ function Tile({ value, row, col, gap, tileSize, isNew, isMerged, isBigMerge, lan
     <div
       className={tileClass}
       style={{
-        top: row * (tileSize + gap) + gap,
-        left: col * (tileSize + gap) + gap,
+        top: row * (cellSize + gap) + gap + (cellSize - tileSize) / 2,
+        left: col * (cellSize + gap) + gap + (cellSize - tileSize) / 2,
         width: tileSize,
         height: tileSize,
         background: isSuper || is2048 ? undefined : color.bg,
@@ -268,6 +268,7 @@ function GameBoard() {
               row={r}
               col={c}
               gap={gap}
+              cellSize={cellSize}
               tileSize={tileSize}
               isNew={animTiles.spawned === `${r},${c}`}
               isMerged={animTiles.merged.has(`${r},${c}`)}
