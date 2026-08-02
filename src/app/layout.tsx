@@ -15,15 +15,15 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Neon 2048',
   description: 'The classic 2048 puzzle reborn as a Neon Arcade — installable, offline-first, bilingual.',
-  manifest: '/manifest.json',
+  manifest: 'manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: '2048',
   },
   icons: {
-    icon: '/icons/icon-512.svg',
-    apple: '/icons/icon-512.svg',
+    icon: 'icons/icon-512.svg',
+    apple: 'icons/icon-512.svg',
   },
   openGraph: {
     title: 'Neon 2048',
