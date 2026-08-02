@@ -1,0 +1,754 @@
+# PRODUCT REQUIREMENTS DOCUMENT (PRD)
+# NEON 2048 — Cinematic, Installable, Offline-First Puzzle Game
+
+────────────────────────────────────────────────────────────
+DOCUMENT IDENTITY
+────────────────────────────────────────────────────────────
+Version         1.0
+Date            August 2, 2026
+Product Owner   NarimanKhaleghi
+Status          FINAL — ready for execution
+Audience        Design, engineering, AI execution agents
+Live product    https://narimankhaleghi.github.io/2048/
+Source repo     https://github.com/NarimanKhaleghi/2048
+Companion specs 10-file engineering pack (FILE 1–10); this PRD is the
+                single product source of truth — engineering details
+                live there, product truth lives here.
+
+────────────────────────────────────────────────────────────
+## 1. OVERVIEW & PRODUCT VISION
+────────────────────────────────────────────────────────────
+Neon 2048 is the classic 2048 puzzle reborn as a "Neon Arcade" — a
+Progressive Web App that installs like a native game, runs full-screen,
+and plays forever without a connection after the very first visit.
+
+The product stands on three words:
+  • ALIVE   — every surface moves, glows, and responds; nothing on
+              screen is dead.
+  • FLUID   — zero perceptible jank, even on mid-range phones; input
+              feels instant.
+  • YOURS   — it installs, it works offline, it never loses progress,
+              and it speaks two languages (EN/FA) in two themes
+              (dark/light).
+
+────────────────────────────────────────────────────────────
+## 2. GOALS & NON-GOALS
+────────────────────────────────────────────────────────────
+GOALS
+  G1  A complete, correct 2048 across five board sizes (2×2 to 6×6).
+  G2  A genuinely "real app" experience: native browser install dialog,
+      full-screen launch, custom icon, 100% offline play.
+  G3  Full preservation of the existing look and functionality
+      (improve — never redesign).
+  G4  Total elimination of lag and micro-stutter, mobile first.
+  G5  Deep motivation: score, per-board bests, combos, heat, ranks,
+      15 achievements, Hall of Fame.
+  G6  Install + offline education at first contact (onboarding).
+  G7  Personalization: dark/light/auto theme + EN/FA with full RTL.
+  G8  Flawless GitHub Pages release with the source link on the
+      main page.
+
+NON-GOALS (explicitly out of scope)
+  • Multiplayer, accounts, servers, cloud saves, in-app purchases.
+  • Push notifications, analytics, tracking, any data collection.
+  • Gamepad support; a third language (architecture ready, not shipped).
+  • On-screen directional controls (fully removed — explicit product
+    directive).
+  • Page scrolling anywhere (explicit product directive).
+
+────────────────────────────────────────────────────────────
+## 3. TARGET USERS & USAGE SCENARIOS
+────────────────────────────────────────────────────────────
+PRIMARY PERSONA — "the everyday mobile player":
+  In a queue, on the metro, while waiting. Mid-range phone. Unstable or
+  zero connectivity. No patience for an app-store install. Expects every
+  swipe to answer instantly and every sudden close to cost nothing.
+
+KEY SCENARIOS
+  S1  First visit → 4-step onboarding → install → offline play in
+      airplane mode.
+  S2  Mid-game tab/app close → return later → "Continue" card with the
+      exact board, score, and even the remaining undo.
+  S3  Chrome desktop user → install button → the browser's official
+      dialog → standalone app.
+  S4  iPhone user → animated Share → Add to Home Screen guide → real
+      home-screen app.
+  S5  Competitive player → chasing per-board bests, Hall of Fame,
+      achievements, and ranks from "Spark" to "Infinity".
+  S6  Persian-speaking user → fully RTL interface with Persian numerals,
+      while the physical board never mirrors.
+  S7  Daylight user → the light "Daylight Arcade" theme with identical
+      readability.
+
+────────────────────────────────────────────────────────────
+## 4. EXPERIENCE PRINCIPLES (PRODUCT LAW)
+────────────────────────────────────────────────────────────
+  X1  Absolute fluidity: no animation, swipe, or effect may ever stutter
+      — not once.
+  X2  The screen belongs to the user: no scrollbars, no D-pad, no
+      clutter — everything fits the frame exactly.
+  X3  Progress is sacred: "close anytime, lose nothing."
+  X4  Installation is a journey, not a feature: taught from the first
+      moment, never forced, never annoying.
+  X5  A full chromatic spectrum, not a single neon accent: every tile
+      tier owns its hue; the stage is layered and living.
+  X6  Removal is as important as addition: no extra buttons, no busy
+      screens.
+  X7  Accessibility is default, not optional.
+
+────────────────────────────────────────────────────────────
+## 5. FUNCTIONAL REQUIREMENTS
+────────────────────────────────────────────────────────────
+Priorities: P0 = required for release · P1 = must exist, negotiable
+only under schedule pressure.
+
+### 5.1 CORE GAMEPLAY (PRD-GL)
+  GL-01 [P0] Classic 2048 rules: swipe/key to slide all tiles to the
+        edge; equal tiles merge (each tile merges at most once per
+        move); after every successful move one new tile spawns in a
+        random empty cell (90% "2", 10% "4").
+  GL-02 [P0] Correct loss detection: a full board that still has
+        possible merges is NOT a loss.
+  GL-03 [P0] A failed move (nothing shifts) has zero effects: no spawn,
+        no score change, no undo snapshot.
+
+### 5.2 GAME MODES (PRD-MD)
+  MD-01 [P0] Five boards, selectable before the game begins:
+        ┌───────┬───────────┬────────────┐
+        │ Size  │ Mode      │ Win target │
+        ├───────┼───────────┼────────────┤
+        │ 2×2   │ Blitz     │ 16         │
+        │ 3×3   │ Compact   │ 256        │
+        │ 4×4   │ Classic   │ 2048       │
+        │ 5×5   │ Grand     │ 2048       │
+        │ 6×6   │ Mega      │ 2048       │
+        └───────┴───────────┴────────────┘
+        Win targets are mathematically tuned per board size.
+  MD-02 [P0] Size is chosen only on the start screen; it never changes
+        mid-run; the goal is always visible in the HUD.
+  MD-03 [P0] Default selection: 4×4 Classic (or the user's last choice).
+  MD-04 [P0] Mode chips show name, size, goal, and a mini grid glyph;
+        the selected chip is distinguished by glow + border weight.
+
+### 5.3 UNDO — STRICTLY ONE STEP (PRD-UN)
+  UN-01 [P0] The undo button reverts exactly and only the last move;
+        greater depth is impossible under any circumstance.
+  UN-02 [P0] After use, the button stays disabled until the next
+        successful move.
+  UN-03 [P0] Undo is free and unlimited in frequency; no score penalty.
+  UN-04 [P0] Undo restores board, score, move count, merge count,
+        highest tile, and heat meter exactly.
+  UN-05 [P0] Undo is also available on the Game Over screen as a
+        "Rescue" that reopens play.
+  UN-06 [P0] Achievements are never rolled back by undo; undo usage is
+        tracked as a stat.
+  UN-07 [P0] Undo availability survives closing and reopening the game
+        (travels with the resume).
+
+### 5.4 INPUT & CONTROLS (PRD-IN)
+  IN-01 [P0] Mobile: 4-direction swipe on the board (24px threshold,
+        dominant axis). A plain tap = no-op.
+  IN-02 [P0] Desktop: arrow keys + WASD; holding a key must not
+        machine-gun moves.
+  IN-03 [P0] Complete, permanent removal of every on-screen directional
+        control (D-pad / arrow buttons / direction widgets) across all
+        screens — markup, styling, and logic. Swipe and keyboard are
+        the only directional inputs.
+  IN-04 [P0] Instant feel: rapid consecutive inputs are never dropped
+        and never doubled; the next move fires the moment the previous
+        animation completes.
+  IN-05 [P0] While any overlay is visible (modal, drawer, onboarding),
+        board input is fully gated — no phantom moves underneath.
+  IN-06 [P1] Multi-touch: only the first finger is honored.
+
+### 5.5 GAMIFICATION (PRD-GM)
+  GM-01 [P0] Base score: sum of the values of tiles created by merges
+        each move (two 16s → +32).
+  GM-02 [P0] Combo: multiple merges in one move → ×2, ×3, … multiplier;
+        a pulsing "COMBO ×N" badge in the hottest merged tile's hue
+        (visible ≥ 900ms).
+  GM-03 [P0] Heat meter: 10 segments; every move containing a merge
+        fills one; a merge-less move resets it; a full meter pays a
+        bonus (5 × highest tile) + screen flare + "OVERHEAT" toast,
+        then drains.
+  GM-04 [P0] Final move score = (base × combo multiplier) + heat bonus.
+  GM-05 [P0] Best score tracked separately for each of the five board
+        sizes; beating it triggers a "NEW BEST" gold-crown flash.
+  GM-06 [P0] Rank titles by highest tile:
+        Spark → Glow → Flare → Blaze → Nova → Pulsar → Quasar →
+        Supernova → Infinity; rank-ups fire a toast + chime.
+  GM-07 [P0] 15 permanent achievements, each with a neon toast (glyph +
+        name + description, 3.5s, tap → archive) and an archive drawer
+        (locked/unlocked states + unlock dates):
+        First Spark · Chain Reaction (3+ merges in one move) ·
+        Triple Digits (128) · Half Kilowatt (512) · Neon Master (2048) ·
+        Beyond Infinity (4096) · Blitz King (win 2×2) ·
+        Perfectionist (win 3×3) · Mega Mind (win 6×6) ·
+        Speed Demon (win 4×4 in ≤ 200 moves) · Savior (new highest tile
+        within 3 moves after an undo) · Purist (win with zero undos) ·
+        Marathoner (500 moves) · Full Spectrum (7+ distinct values on
+        board at once) · Overheated (trigger a heat bonus).
+  GM-08 [P0] Session stats: moves, merges, active play time (mm:ss),
+        max combo, undos used, heat bonuses — compact in the HUD,
+        full breakdown in end-game modals.
+  GM-09 [P0] Local Hall of Fame: top 5 runs per board size (score,
+        moves, time, date); qualifying on game end fires a
+        "HALL OF FAME — #N" toast.
+  GM-10 [P1] Lifetime totals: games played/won, lifetime moves and
+        merges, highest tile ever.
+
+### 5.6 WIN, LOSE & ENDLESS (PRD-WL)
+  WL-01 [P0] Reaching the goal tile → celebration: neon confetti +
+        shockwave + trophy modal with full stats and three buttons:
+        [Continue — Endless] [New Game] [Change Mode].
+  WL-02 [P0] The win modal appears once per run; endless play is free,
+        and higher milestones (4096) still unlock achievements.
+  WL-03 [P0] Loss → desaturation sweep + overlay: final score vs best,
+        full stats, buttons: [Undo Rescue] (only when a snapshot
+        exists), [Try Again], [Change Mode].
+  WL-04 [P0] Game over (no rescue) → Hall of Fame + stats recorded,
+        then the active run is cleared; the next game starts clean.
+
+### 5.7 SAVE, RESUME & PROGRESS DURABILITY (PRD-SV)
+  SV-01 [P0] Autosave after every successful move + when the page is
+        hidden/closed. Worst case after any crash: losing only the
+        in-flight move — never more.
+  SV-02 [P0] Resume: if an unfinished run exists, the start screen
+        shows a "Continue" card: mode, board size, score, highest
+        tile, play time, mini board preview + [Continue] and
+        [Discard & New Game] buttons.
+  SV-03 [P0] Continue → the game restores exactly (including the
+        remaining undo) + "Progress restored ✓" toast.
+  SV-04 [P0] "Discard & New Game" is destructive: two-step inline
+        confirmation ("Tap again to confirm", 2s window) — no
+        intrusive modal.
+  SV-05 [P0] Bests, achievements, Hall of Fame, and settings persist
+        independently of any active run and survive "Discard".
+  SV-06 [P0] Recorded time = active play time only; an abandoned open
+        tab does not inflate it.
+  SV-07 [P1] Live multi-tab sync: best/achievement changes in one tab
+        refresh the other tab's start screen.
+  SV-08 [P0] Corrupt/unknown data → that entry is safely discarded and
+        defaults take over; never a crash or visible error.
+  SV-09 [P0] Private browsing: the game is fully playable; a single
+        info toast: "Private browsing — progress won't persist".
+  SV-10 [P0] Full reset: at the bottom of the How to Play drawer,
+        "Reset all progress" with two-step confirmation → wipes
+        everything.
+
+### 5.8 VISUAL IDENTITY — "NEON ARCADE" (PRD-VS)
+  VS-01 [P0] The existing identity (palette, layout, overall feel) is
+        preserved; this document enriches it, never replaces it.
+  VS-02 [P0] A four-layer living stage: a drifting synthwave
+        perspective grid floor, floating glow orbs (cyan/magenta/
+        violet/amber), parallax particle dust, and a vignette. Layers
+        live at the edges; the board area stays calm.
+  VS-03 [P0] Tile spectrum — every value owns a distinct neon identity
+        (hue, glow ring, gradient, text color): 2 cyan → 4 mint →
+        8 lime → 16 amber → 32 orange → 64 hot-pink → 128 magenta →
+        256 violet → 512 blue-violet → 1024 electric blue → 2048
+        radiant gold with animated shimmer → 4096+ iridescent spin.
+  VS-04 [P0] Board frame: a dark glassy slab with a neon rim whose hue
+        follows the highest tile and breathes gently; cells are
+        recessed sockets.
+  VS-05 [P0] Two-family typography with strong contrast: large heavy
+        display numerals and titles (Orbitron), readable small body and
+        letter-spaced labels (Space Grotesk). HUD labels: ~10px,
+        uppercase, dim; the score value: the largest number on screen.
+  VS-06 [P0] Start screen = arcade "attract mode": a living 2048 logo
+        whose mini-tiles merge/split in a 6s loop + tagline
+        "MERGE · GLOW · ASCEND". Layout: logo, Continue card (when a
+        save exists), mode chips, Start button, secondary links,
+        Install, GitHub. No generic centered hero banner — the game
+        itself is the hero.
+  VS-07 [P0] Buttons/chips: neon pills with hover bloom, press-down
+        scale, shine sweep; no interactive element is lifeless.
+  VS-08 [P0] App icon: a neon tile with gold "2048" digits on deep
+        navy — legible under both themes, on any wallpaper, and still
+        recognizable at 48px.
+
+### 5.9 DARK / LIGHT THEMES (PRD-TH)
+  TH-01 [P0] Three states: Dark (brand default) / Light / Auto
+        (follows the OS, live even mid-game).
+  TH-02 [P0] The light theme — "Daylight Arcade" — is an independent,
+        designed identity, not an inversion: bright cool stage, faint
+        blueprint grid, orbs as soft light pools, saturated jewel
+        tiles with soft colored shadows, dark ink text.
+  TH-03 [P0] Light-theme readability matches dark: all text/background
+        pairs meet at least AA; particles and confetti remain fully
+        visible (saturated colors instead of additive glow).
+  TH-04 [P0] Theme switch: a smooth ~300ms veil transition with no
+        jump; no game state resets.
+  TH-05 [P0] Theme control in the header: sun/moon icon with a
+        rotate-and-fade animation; an "Auto (follow system)" option in
+        the settings drawer.
+  TH-06 [P0] Browser chrome / status bar harmonize with the active
+        theme; on iOS light theme, status-bar legibility is guaranteed
+        by a subtle top scrim.
+  TH-07 [P0] The choice persists; an installed app applies the correct
+        theme before the first frame of a cold launch.
+
+### 5.10 MOTION & EFFECTS — EVERYTHING ALIVE (PRD-MO)
+  MO-01 [P0] Tile spawn: elastic overshoot pop + glow flash.
+  MO-02 [P0] Slide: ~130ms with a snappy feel + a short light streak
+        along the move direction.
+  MO-03 [P0] Merge: scale pulse + expanding shockwave ring + particle
+        burst in the tile's hue + brightness spike.
+  MO-04 [P0] Score: animated count-up + floating "+N" chips rising from
+        each merged cell (staggered, fading).
+  MO-05 [P0] Big merges (≥128): subtle screen shake + dual-hue rim
+        flash.
+  MO-06 [P0] Win: 120–160 particle full-spectrum confetti + central
+        shockwave + trophy modal after ~600ms.
+  MO-07 [P0] Loss: progressive desaturation + staggered tile dim +
+        delayed overlay content.
+  MO-08 [P0] Screen transitions (start ↔ game, drawers, modals):
+        250–350ms with soft easing; input is never blocked beyond
+        ~300ms.
+  MO-09 [P0] Living ambience: rim breathing (4s), orb drift (40–90s),
+        grid floor motion (12s), logo choreography (6s) — all pause
+        when the tab is hidden.
+  MO-10 [P0] Micro-interactions on every interactive element: hover,
+        press, tap ripple, shine sweep; the install pill carries a slow
+        attention pulse.
+  MO-11 [P0] Undo: a short 180ms fade/scale to the restored state +
+        descending blip.
+  MO-12 [P0] Full respect for the OS "reduce motion" setting: shake,
+        particles, and ambient loops removed; transitions ≤150ms; no
+        information lost.
+  MO-13 [P0] An effects-quality control (High/Low) + automatic
+        reduction on weak devices; low quality trims decoration only —
+        gameplay, input, and feedback are never sacrificed.
+
+### 5.11 SOUND & HAPTICS (PRD-SN)
+  SN-01 [P0] All sound is synthesized in real time (no audio files):
+        slide whoosh, merge pop with pitch rising by tile value, chain
+        chime, heat flare, rank-up arpeggio, achievement ding, win
+        arpeggio, lose thud, UI tick, undo blip, new-best ding-ding.
+  SN-02 [P0] A mute toggle with an animated icon; the choice persists;
+        silence never breaks the experience.
+  SN-03 [P0] Sound never plays with latency artifacts or unwanted
+        clicks; first playback follows the first user interaction.
+  SN-04 [P0] Haptic feedback on mobile: merge 10ms, big merge 25ms,
+        heat/win/lose multi-pulse patterns, undo 8ms; plain buttons
+        get no vibration (avoid tactile noise).
+
+### 5.12 PROFESSIONAL ONBOARDING (PRD-OB)
+  OB-01 [P0] Shown only on the first visit, ~400ms after the stage is
+        ready; fully suppressed when the app is already running
+        installed.
+  OB-02 [P0] Structure: a 4-step carousel with progress dots, a
+        "2 of 4" counter, and an always-available Skip; navigable by
+        swipe, arrow keys, and Esc.
+  OB-03 [P0] Every step carries a live animated illustration (never a
+        static image):
+        1) "Welcome" — a real mini-board merging in a 3s loop +
+           swipe/keyboard explanation.
+        2) "Install it — make it yours" — the star of the tour: a live
+           Install button that opens the browser's native dialog right
+           there (Chrome/Edge/Android), or an animated Share →
+           Add to Home Screen mockup (iPhone/iPad), or a pointer to the
+           address-bar install icon (desktop). If already installed: a
+           confirmation card — "You're running as an app".
+        3) "Plays anywhere. Even nowhere." — an animated Wi-Fi →
+           airplane toggle while the game keeps merging beneath it + a
+           "cached on this device" ring around the app icon.
+        4) "Sharpen your run" — three looping vignettes: undo, combo,
+           heat + the five boards + a pointer to the theme & language
+           controls.
+  OB-04 [P0] Ending: "Start Playing" with a gold micro-burst; whether
+        completed or skipped, the tour never auto-appears again.
+  OB-05 [P0] A "?" button on every screen reopens the tour anytime;
+        step 2 always reflects the current install state.
+  OB-06 [P0] Complete, professional bilingual copy (master strings in
+        §8; binding Persian copy in the localization spec); the FA
+        tour is fully RTL while the phone mockup stays LTR-accurate.
+  OB-07 [P0] A separate "How to Play" drawer, always accessible:
+        rules, controls, scoring formula, the undo rule, the mode
+        table, shortcuts, settings (theme/language/quality/sound),
+        reset, GitHub link.
+
+### 5.13 INSTALL — A REAL APP EXPERIENCE (PRD-IS)
+  IS-01 [P0] On Chrome, Edge (desktop + Android), and Samsung Internet:
+        the product's install buttons must open the browser's OWN
+        native install dialog — never a simulated behavior.
+  IS-02 [P0] On Chrome desktop, the browser's own address-bar install
+        icon must also appear and work (installability criteria always
+        satisfied).
+  IS-03 [P0] On iPhone/iPad (Safari): an animated three-beat guide
+        modal (Share → Add to Home Screen → Add); never a fake install
+        dialog.
+  IS-04 [P1] On macOS Safari: a "File → Add to Dock" guide.
+  IS-05 [P0] When the browser offers no install event: a browser-menu
+        guide (⋮ → Install app / Add to Home screen).
+  IS-06 [P0] Install surfaces (all wired to one manager): header pill,
+        start-screen card, onboarding step 2 live button, smart nudge
+        toast.
+  IS-07 [P0] Smart nudge rules: max 1 per session, max 2 lifetime,
+        never mid-game/mid-animation; offered at a milestone (first
+        win or third session); actions Install / Later / Never;
+        "Never" is respected forever.
+  IS-08 [P0] After install: all install UI hides, a congratulatory
+        toast fires ("Installed! Launch it from your home screen ✓"),
+        and the next standalone launch shows a one-time "Running as
+        app ✓" badge.
+  IS-09 [P0] The installed app: full-screen with zero browser chrome,
+        status bar blended with the stage, neon icon, name "2048"
+        under the icon.
+  IS-10 [P0] Installation by any path (including the address-bar icon)
+        is detected and handled identically.
+
+### 5.14 OFFLINE — ALWAYS AVAILABLE (PRD-OF)
+  OF-01 [P0] After the first successful online visit, the ENTIRE
+        product — code, fonts, icons, sounds, guides — works with zero
+        connectivity: full gameplay, all five modes, onboarding,
+        install guides, drawers, achievements.
+  OF-02 [P0] Going offline → one subtle one-time toast: "Offline —
+        full game still available ✓"; returning online → its paired
+        toast only if the first was shown.
+  OF-03 [P0] Updates: online users always see the latest version;
+        offline users get the valid cached one; after an update ships,
+        stale caches are purged and (P1) an "Updated ✓" toast appears.
+  OF-04 [P0] Game saves and asset caches are two independent layers:
+        clearing one never breaks the other.
+
+### 5.15 LAYOUT, DISPLAY & RESPONSIVENESS (PRD-LY)
+  LY-01 [P0] Absolute ban on page scrolling on any device, orientation,
+        or size; the entire product is a fixed frame that fits exactly.
+  LY-02 [P0] Overlays (modals/drawers/onboarding) may scroll internally
+        if their own content overflows — the underlying page never.
+  LY-03 [P0] Mobile browser chrome changes (address-bar collapse/
+        expand) cause no jump or clipping — the layout adapts softly.
+  LY-04 [P0] Complete D-pad removal (confirms IN-03); no layout-
+        occupying swipe-hint widgets.
+  LY-05 [P0] No pinch zoom, double-tap zoom, pull-to-refresh, or
+        rubber-banding; compensation: tap targets ≥ 44px and text
+        ≥ 12.5px.
+  LY-06 [P0] Notched phones and safe areas: content never sits under
+        the notch/home indicator; the stage fills edge to edge.
+  LY-07 [P0] Phone landscape: board + side HUD rail; very low heights:
+        a single essential HUD row — still zero scroll.
+  LY-08 [P0] Desktop (≥960px): two columns — board left (max 560px),
+        score/rank/heat/controls/install/GitHub panel right.
+  LY-09 [P0] Hard floor at 320px width: everything readable, nothing
+        clipped — a release gate.
+  LY-10 [P0] 4K: size caps honored; typography reaches its clamp
+        maximums.
+  LY-11 [P0] Mobile HUD ≤ 22% of viewport height; hierarchy law: the
+        score is the largest number, labels are tiny and dim.
+
+### 5.16 LANGUAGE & RTL (PRD-LN)
+  LN-01 [P0] Two languages: English (base) and Persian; auto-detection
+        from the system language on first run; manual choice persists;
+        the architecture accepts a third language without product
+        changes.
+  LN-02 [P0] Language control in the header: a two-segment [EN | FA]
+        control with a sliding neon indicator; both labels always
+        visible.
+  LN-03 [P0] Persian = full right-to-left: drawers, toasts, layouts,
+        directional icons, and progress dots all mirror.
+  LN-04 [P0] Never mirrored (physical truths of the game): the board,
+        swipe directions, tile digits, the logo, and the iOS phone
+        mockup in guides.
+  LN-05 [P0] First-class Persian typography via a dedicated Persian
+        webfont (body 400/500/700, display 800/900) — never an
+        accidental system fallback; the Persian font is cached for
+        offline like the others.
+  LN-06 [P0] Numerals: HUD, stats, timer, and Hall of Fame use
+        locale-formatted Persian numerals in FA; tiles and the logo
+        always stay Latin (brand identity); dates use the locale
+        calendar.
+  LN-07 [P0] Live language switching: every open surface (drawer,
+        toast, modal) updates in place — nothing closes, no state is
+        lost.
+  LN-08 [P0] Every product string ships in both languages in the same
+        release; a missing key falls back to English with a developer
+        warning.
+  LN-09 [P0] The longest Persian strings cause no overflow at 320px.
+  LN-10 [P0] Theme × language are independent: all four combinations
+        (dark/light × EN/FA) are tested as equals.
+
+### 5.17 ACCESSIBILITY (PRD-AC)
+  AC-01 [P0] Full keyboard operability: every feature works without a
+        mouse; arrows move tiles only on the game screen.
+  AC-02 [P0] Live spoken announcements for: merge+score, combo, undo,
+        win, loss, achievements — one sentence per event, no spam.
+  AC-03 [P0] Visible neon focus rings; focus trapping inside overlays;
+        Esc closes the topmost surface; focus returns to the invoker.
+  AC-04 [P0] Text contrast of at least WCAG AA in both themes
+        (spot-checked on five surfaces).
+  AC-05 [P0] Color is never the sole meaning carrier: combos show
+        "×N", heat shows "n/10", achievements carry glyph + name, the
+        selected chip has a spark + thicker border.
+  AC-06 [P0] Exact spoken labels on: install, GitHub, sound, effects,
+        undo, theme, language, and tour steps.
+  AC-07 [P0] The zoom trade-off (page zoom disabled by the no-scroll
+        law) is compensated by large targets, readable minimums, full
+        keyboard access, and desktop browser zoom — and stated honestly
+        in the documentation.
+
+### 5.18 GITHUB PRESENCE (PRD-GH)
+  GH-01 [P0] The link https://github.com/NarimanKhaleghi/2048 appears
+        in four placements: icon + text in the start-screen link
+        cluster, icon-only in the game-screen header, full URL at the
+        How to Play drawer footer, and demo/source links in the README.
+  GH-02 [P0] Always opens in a new tab with safe referrer attributes;
+        never causes overflow; spoken label "View source code on
+        GitHub".
+
+### 5.19 SETTINGS (PRD-ST)
+  ST-01 [P0] Persisted settings: sound, effects quality, theme
+        (dark/light/auto), language, last board size, install/nudge
+        state.
+  ST-02 [P0] Fast access from the header (sound, theme, language) +
+        the rest inside the How to Play drawer.
+
+────────────────────────────────────────────────────────────
+## 6. NON-FUNCTIONAL REQUIREMENTS
+────────────────────────────────────────────────────────────
+### 6.1 PERFORMANCE (THE FLUID EXPERIENCE)
+  NF-01 [P0] Zero perceptible jank: swipe → slide → merge → spawn is
+        perfectly fluid on a mid-range phone; test bar: no dropped
+        frames across 20 rapid moves under a weak-device simulation
+        (4× CPU slowdown).
+  NF-02 [P0] Instant input feel (confirms IN-04); animations never hold
+        input hostage.
+  NF-03 [P0] Win confetti sustains smooth motion with no visible
+        stutter.
+  NF-04 [P0] Idle state: the stage stays alive at negligible CPU and
+        battery cost; orbs freeze after 90s of no interaction.
+  NF-05 [P0] Memory stays stable across 200 consecutive moves — no
+        leaks, no garbage growth.
+  NF-06 [P0] Fast cold start: the game is playable within a few
+        hundred milliseconds.
+  NF-07 [P0] Weak devices: automatic, one-way decorative reduction + a
+        "Performance mode enabled" toast — gameplay is never
+        sacrificed.
+
+### 6.2 COMPATIBILITY
+  NF-08 [P0] Chrome Android, iOS Safari 15+, Chrome/Edge desktop
+        (mandatory); Samsung Internet, Edge, macOS Safari, iPad (must
+        work); 320px through 4K, portrait and landscape.
+  NF-09 [P0] Runs cleanly on GitHub Pages HTTPS and a local server; on
+        file:// the game still plays (install/offline dormant, no
+        errors).
+
+### 6.3 PRIVACY & DATA
+  NF-10 [P0] All data stays on the device; no accounts, no tracking,
+        no cookies, no network calls after load (except optional font
+        revalidation).
+  NF-11 [P0] No personal data is stored; the README states this in one
+        plain sentence.
+
+### 6.4 RELIABILITY
+  NF-12 [P0] "Close anytime, lose nothing" (SV-01); worst case is one
+        in-flight move.
+  NF-13 [P0] Failure of any subsystem (audio, storage, offline,
+        vibration, particle canvas) never halts the game — only that
+        capability switches off, with a one-time notice.
+  NF-14 [P0] Zero visible console errors in the normal flow.
+
+────────────────────────────────────────────────────────────
+## 7. SCREEN INVENTORY & FLOWS
+────────────────────────────────────────────────────────────
+SURFACES
+  1. Start screen (attract mode): living logo, Continue card, mode
+     chips, Start, links, Install, GitHub, header.
+  2. Game screen: header (back, theme, language, install, GitHub) +
+     board + HUD (score/best/goal · rank/heat · undo/sound/effects/
+     help/menu).
+  3. Trophy modal (win) · 4. Game-over overlay · 5. How to Play
+  drawer · 6. Achievements drawer · 7. Hall of Fame drawer ·
+  8. Onboarding tour · 9. Install guide modals (no-event Android /
+  iOS / macOS) · 10. Toasts.
+
+PRIMARY FLOWS
+  F1 First visit: load → stage → 4-step tour → (install at step 2) →
+     play.
+  F2 Play: swipe → move → score/combo/heat → achievements/ranks →
+     win or lose → best/Hall of Fame recorded.
+  F3 Return: load → save detected → Continue card → exact restore.
+  F4 Install: any surface → native dialog/guide → installed → install
+     UI hides → standalone launch.
+  F5 Offline: network lost → reassuring toast → full gameplay →
+     local saves.
+  F6 Personalize: theme/language controls → instant global apply →
+     persisted.
+
+OVERLAY LAW: every overlay gates board input; Esc always closes the
+topmost; scrim taps close modals/drawers (the tour closes via Skip
+only).
+
+────────────────────────────────────────────────────────────
+## 8. CONTENT & MESSAGING — MASTER STRINGS (EN)
+────────────────────────────────────────────────────────────
+Every product string ships in BOTH languages in the same release. The
+binding Persian copy is defined in the localization spec (companion
+pack, FILE 10 §9) and must match this inventory key-for-key.
+
+  Install pill      "Install App"
+  Start             "Start Game"
+  Continue          "Continue"
+  Discard           "Discard & New Game"
+  Score / Best      "Score" / "Best"
+  Goal              "Goal {n}"
+  Tagline           "MERGE · GLOW · ASCEND"
+  Tour 1            "Welcome to Neon 2048"
+  Tour 2            "Install it — make it yours"
+  Tour 3            "Plays anywhere. Even nowhere."
+  Tour 4            "Sharpen your run"
+  Win               "NEON MASTER!"
+  Lose              "GAME OVER"
+  Undo rescue       "Undo Rescue"
+  Endless           "Continue — Endless"
+  Offline toast     "Offline — full game still available ✓"
+  Restored toast    "Progress restored ✓"
+  Nudge             "Enjoying Neon 2048? Install it — plays 100%
+                     offline ⚡"
+  Nudge actions     "Install" / "Later" / "Never"
+  Installed toast   "Installed! Launch it from your home screen ✓"
+  New best          "NEW BEST"
+  Combo             "COMBO ×{n}"
+  Overheat          "OVERHEAT! +{n}"
+  Hall of Fame      "HALL OF FAME — #{n}"
+  Rank up           "RANK UP — {rank}"
+  Undo done         "Move undone. Score restored to {n}."
+  Private mode      "Private browsing — progress won't persist"
+  Performance       "Performance mode enabled"
+  Theme labels      "Switch to light theme" / "Switch to dark theme"
+                    / "Auto (follow system)"
+  GitHub            "Source on GitHub"
+
+Voice: short, warm, confident. Persian copy must read natural and
+product-grade — never machine-translation residue. Numeral rendering
+follows LN-06.
+
+────────────────────────────────────────────────────────────
+## 9. DELIVERY PROCESS REQUIREMENTS (BINDING ON THE EXECUTOR)
+────────────────────────────────────────────────────────────
+  PR-01 [P0] Before any change, the executor writes its own complete
+        task list and reports it checked off upon completion.
+  PR-02 [P0] Full review of the existing files before touching
+        anything; a report of what is KEPT / ENHANCED / REMOVED
+        (removal only by explicit order of this document: the D-pad
+        and scrolling).
+  PR-03 [P0] Complete preservation of the existing look and
+        functionality (VS-01); no redesign is permitted.
+  PR-04 [P0] Splitting code into separate files is free and encouraged
+        when it raises quality; reducing code volume or quality is
+        forbidden in any form; no partial, summarized, or "same as
+        before" deliverables.
+  PR-05 [P0] At the end, the full acceptance checklist (§10) is
+        printed with a tick and a one-line justification per item; an
+        unticked item = unfinished work.
+  PR-06 [P0] Files are delivered complete; if a length limit is hit,
+        stop at a file boundary and continue in the next message —
+        never summarize.
+
+────────────────────────────────────────────────────────────
+## 10. PRODUCT ACCEPTANCE CHECKLIST (RELEASE GATE)
+────────────────────────────────────────────────────────────
+GAMEPLAY
+  □ Rules correct on all five sizes (merge, 90/10 spawn, win, lose,
+    endless)
+  □ Undo is exactly one step, then disabled; Rescue works on game over
+  □ Rapid input: no dropped or doubled moves
+CONTROLS & LAYOUT
+  □ Zero directional controls in the entire product
+  □ Zero scrolling at 320px, standard phone portrait/landscape,
+    desktop, 4K
+  □ iOS address-bar collapse causes no jump
+  □ Notch and safe areas respected
+PERFORMANCE
+  □ 20 rapid moves under weak-device simulation: no dropped frames
+  □ Win confetti fluid; idle low-cost; memory stable
+INSTALL & OFFLINE
+  □ Chrome desktop: product button AND address-bar icon → native
+    dialog → install
+  □ Chrome Android: banner → native bottom sheet → install
+  □ iOS Safari: animated guide → Add to Home Screen → standalone
+  □ No-event and macOS guides present
+  □ Nudge rules: 1/session, 2/lifetime, "Never" permanent
+  □ Offline after first visit: full game + fonts + icons
+  □ Offline resume after a tab kill
+ONBOARDING
+  □ First visit only; suppressed when installed; reopenable via "?"
+  □ Step 2 has a working live install action; step 3 teaches offline
+    correctly
+PERSISTENCE
+  □ Mid-game kill → Continue card with exact state + remaining undo
+  □ Bests/achievements/Hall of Fame survive "Discard"
+  □ Corrupt data → safe discard, no errors
+THEME & LANGUAGE
+  □ All four theme×language combinations flawless; full RTL; the board
+    never mirrors
+  □ Persian numerals in the HUD, Latin on tiles; Persian font works
+    offline
+  □ Live switching updates open surfaces without closing them
+GAMIFICATION
+  □ All 15 achievements fire on their exact conditions
+  □ Hall of Fame holds exactly 5 entries per size
+ACCESSIBILITY & PRESENCE
+  □ Full keyboard play; live announcements; AA contrast in both themes
+  □ GitHub link in all four placements with correct behavior
+  □ Deployed at https://narimankhaleghi.github.io/2048/ with zero 404s
+DOCUMENTATION
+  □ README complete: demo, source, per-platform install, offline,
+    architecture, maintenance, accessibility, privacy, reset
+
+────────────────────────────────────────────────────────────
+## 11. OUT OF SCOPE (EXPLICIT)
+────────────────────────────────────────────────────────────
+Multiplayer / servers / accounts · cloud saves · purchases and ads ·
+push notifications · analytics / tracking · gamepad · a third language
+this release · on-screen directional pads · page scrolling · extra
+color themes beyond dark/light.
+
+────────────────────────────────────────────────────────────
+## 12. REQUIREMENT TRACEABILITY MATRIX (NOTHING WAS LOST)
+────────────────────────────────────────────────────────────
+  Product ask stated during the engagement      Coverage in this PRD
+  ────────────────────────────────────────────  ─────────────────────
+  Animations & effects on everything            §5.10 + §5.8
+  Beautiful gamification                        §5.5
+  Unique modern neon design + great UI/UX       §5.8 + §4 (X5)
+  Undo button — only one step back              §5.3
+  Board sizes 2×2 up to a reasonable max,
+  chosen before start                           §5.2
+  Resume from browser storage                   §5.7
+  Installable web app + fully responsive        §5.13 + §5.15
+  Install prompt on Chrome and Safari           §5.13 (IS-01..05)
+  Fully offline via browser cache               §5.14
+  Exact execution on GitHub Pages               §6.2 + §5.19 + §10
+  Total lag elimination + mobile optimization   §6.1 + X1
+  Preserve existing structure & look            PR-02, PR-03, VS-01
+  Real install button inside Chrome             IS-01, IS-02
+  Add to Home on Safari + permanent offline     IS-03, §5.14
+  GitHub link on the main page                  §5.18
+  Remove direction keys + absolute no-scroll    IN-03, §5.15, X2
+  Professional install/offline onboarding       §5.12
+  Executor self-tasking + full file review      §9 (PR-01..02)
+  File splitting without quality/volume loss    PR-04
+  Checklist so nothing is forgotten             §10 + PR-05
+  Light/dark themes                             §5.9
+  Language switching + RTL                      §5.16
+
+────────────────────────────────────────────────────────────
+## 13. GLOSSARY
+────────────────────────────────────────────────────────────
+  Merge       Two equal tiles combine into one doubled tile
+  Combo       Multiple merges in one move, with a score multiplier
+  Heat        A 10-segment streak meter of consecutive merging moves
+  Rank        The player's spoken title, by highest tile
+  Hall        The local top-5 leaderboard per board size
+  Undo        Rewind of exactly one move (also as a game-over rescue)
+  Endless     Continuing play after the goal tile is reached
+  Attract     The start screen with its living logo, arcade-style
+  PWA         An installable, offline-capable web application
+  RTL         The right-to-left layout of the Persian locale
+
+────────────────────────────────────────────────────────────
+END OF DOCUMENT — This PRD is the final product reference. Any
+conflict with other documents is resolved in favor of this
+document's P0 requirements.
+────────────────────────────────────────────────────────────

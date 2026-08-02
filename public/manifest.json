@@ -1,0 +1,20 @@
+{
+  "name": "Neon 2048",
+  "short_name": "2048",
+  "description": "The classic 2048 puzzle reborn as a Neon Arcade",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a1a",
+  "theme_color": "#0a0a1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["games"]
+}
